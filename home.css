@@ -724,6 +724,7 @@ h1 {
     mask-image: linear-gradient(to right, transparent, #000 7% 93%, transparent), linear-gradient(to bottom, transparent, #000 5% 94%, transparent);
     -webkit-mask-composite: source-in;
     mask-composite: intersect;
+    clip-path: inset(0 0 var(--video-sun-cover, 0px) 0);
 }
 
 .gameplay-preview figcaption {
@@ -794,14 +795,16 @@ h1 {
 }
 
 .video-track { position: relative; min-width: 0; z-index: 1; }
-.gameplay-preview { margin: 0 auto; transform: translateY(var(--video-shift, 0px)); }
+.gameplay-preview { margin: 0 auto; transform: translate3d(0, var(--video-shift, 0px), 0); will-change: transform; backface-visibility: hidden; }
 .planet-column { min-width: 0; z-index: 2; pointer-events: none; }
 
 .orbit-stage {
     position: relative;
     --orbit-run: 1200px;
     height: calc(var(--orbit-run) + max(480px, 35vw + 200px));
-    transform: translateY(var(--planet-shift, 0px));
+    transform: translate3d(0, var(--planet-shift, 0px), 0);
+    will-change: transform;
+    backface-visibility: hidden;
     --overlap-x: calc(20px - var(--showcase-gap) - max(0px, 50% - 140px));
 }
 
@@ -829,9 +832,10 @@ h1 {
 
 .sun-horizon {
     position: absolute;
-    z-index: 0;
+    z-index: 3;
     left: 0;
-    top: var(--sun-top, 100%);
+    top: 0;
+    transform: translate3d(0, var(--sun-top, 0px), 0);
     width: 100%;
     height: 35vw;
     overflow: hidden;
@@ -960,9 +964,14 @@ h1 {
     .gameplay-preview figcaption { gap: 4px; font-size: 11px; }
 }
 
+.gameplay-preview {
+    /* Leave room for the caption so the entry phase can reveal the whole video. */
+    width: min(280px, calc((100svh - 100px) * 480 / 1044));
+}
+
 @media (prefers-reduced-motion: reduce) {
     .gameplay-preview,
-    .orbit-stage { transform: none; }
+    .orbit-stage { transform: none; will-change: auto; }
     .orbit-reveal { stroke-dashoffset: 0; }
     .sun-horizon { opacity: 1; }
 }

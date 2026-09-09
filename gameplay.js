@@ -56,13 +56,14 @@
     const showcase = document.querySelector('.gameplay-showcase');
     const track = document.querySelector('.video-track');
     const preview = document.querySelector('.gameplay-preview');
+    const previewVideo = preview?.querySelector('video');
     const stage = document.querySelector('.orbit-stage');
     const orbit = document.querySelector('.orbit-path');
     const route = document.querySelector('.orbit-route');
     const reveal = document.querySelector('.orbit-reveal');
     const mask = document.querySelector('#orbit-reveal-mask');
     const sun = document.querySelector('.orbit-sun');
-    if (!showcase || !track || !preview || !stage || !orbit || !route || !reveal || !mask) return;
+    if (!showcase || !track || !preview || !previewVideo || !stage || !orbit || !route || !reveal || !mask) return;
 
     // Fit the same ordered, looping route to the actual planet centres at each size.
     const rebuildRoute = () => {
@@ -99,38 +100,49 @@
         reveal.setAttribute('d', d);
     };
 
-    // Video moves at 20% of page speed, staying with the finale; planets at 120%.
+    // Enter low, cross the viewport while the planets pass, then leave after the finale.
     let framePending = false;
     let currentPlanetShift = 0;
+    let layout;
     const updateScroll = () => {
         framePending = false;
-        const sectionTop = showcase.getBoundingClientRect().top + window.scrollY;
-        const start = Math.max(0, sectionTop - window.innerHeight * 0.65);
-        const travel = Math.max(0, window.scrollY - start);
-        const available = Math.max(0, track.clientHeight - preview.offsetHeight);
-        const shift = reducedMotion.matches ? 0
-            : Math.min(available, travel * 0.8);
+        const { trackTop, naturalStageTop, sectionTop, height, start,
+            routeEnd, finaleTravel, planetLimit, videoLowTop,
+            videoHighTop } = layout;
+        const scroll = window.scrollY;
+        const travel = Math.max(0, scroll - start);
+        const showcaseTravel = Math.min(travel, finaleTravel);
+        const showcaseProgress = Math.min(1, showcaseTravel / Math.max(1, finaleTravel));
+        const videoShift = reducedMotion.matches ? 0
+            : showcaseTravel - (videoLowTop - videoHighTop) * showcaseProgress;
         const planetShift = reducedMotion.matches ? 0
-            : -Math.min(stage.clientHeight * 0.22, travel * 0.2);
-        const stageTop = stage.getBoundingClientRect().top - currentPlanetShift + planetShift;
-        const routeEnd = sun ? sun.offsetTop : stage.clientHeight;
+            : -Math.min(planetLimit, travel * 0.2);
+        const stageTop = naturalStageTop - scroll + planetShift;
         const progress = reducedMotion.matches ? 1
-            : Math.max(0, Math.min(1, (window.innerHeight * 0.8 - stageTop) / routeEnd));
+            : Math.max(0, Math.min(1, (height * 0.8 - stageTop) / routeEnd));
         const sunTop = stageTop + routeEnd;
+        const videoTop = trackTop - scroll + videoShift;
+        const videoBottom = videoTop + layout.videoHeight;
+        // The Sun has a soft visual tail. Permanently clip gameplay behind its
+        // leading edge so that transparency cannot reveal the video again.
+        const sunEdgeAtVideo = sunTop + Math.min(54, height * 0.06);
+        const sunCover = Math.max(0, Math.min(layout.videoHeight,
+            videoBottom - sunEdgeAtVideo));
         const smooth = value => {
             const t = Math.max(0, Math.min(1, value));
             return t * t * (3 - 2 * t);
         };
-        // The horizon only emerges with the end of the chain, then dissolves away.
+        // The horizon emerges at the end of the chain and the section clips its exit.
         const appear = reducedMotion.matches ? 1
-            : smooth((window.innerHeight * 0.95 - sunTop) / (window.innerHeight * 0.35));
+            : smooth((height * 0.95 - sunTop) / (height * 0.35));
         const disappear = reducedMotion.matches ? 0
-            : smooth((window.innerHeight * 0.32 - sunTop) / (window.innerHeight * 0.42));
-        const sunOpacity = appear * (1 - disappear);
-        preview.style.setProperty('--video-shift', `${shift.toFixed(1)}px`);
-        stage.style.setProperty('--planet-shift', `${planetShift.toFixed(1)}px`);
+            : smooth((height * 0.32 - sunTop) / (height * 0.42));
+        const sunOpacity = appear;
+        preview.style.setProperty('--video-shift', `${videoShift}px`);
+        preview.style.setProperty('--video-sun-cover', `${sunCover}px`);
+        stage.style.setProperty('--planet-shift', `${planetShift}px`);
         reveal.style.strokeDashoffset = (1 - progress).toFixed(4);
-        showcase.style.setProperty('--sun-top', `${sunTop - showcase.getBoundingClientRect().top}px`);
+        showcase.style.setProperty('--sun-top', `${sunTop - sectionTop + scroll}px`);
         showcase.style.setProperty('--sun-opacity', sunOpacity.toFixed(4));
         route.style.opacity = (1 - disappear).toFixed(4);
         currentPlanetShift = planetShift;
@@ -144,6 +156,22 @@
     window.addEventListener('scroll', scheduleScroll, { passive: true });
     const updateLayout = () => {
         rebuildRoute();
+        const scroll = window.scrollY;
+        const height = window.innerHeight;
+        const trackTop = track.getBoundingClientRect().top + scroll;
+        const naturalStageTop = stage.getBoundingClientRect().top - currentPlanetShift + scroll;
+        const freeViewport = Math.max(0, height - preview.offsetHeight - 48);
+        const videoHighTop = 24 + freeViewport * 0.3;
+        const videoLowTop = 24 + freeViewport * 0.7;
+        const start = Math.max(0, trackTop - videoLowTop);
+        const routeEnd = sun ? sun.offsetTop : stage.clientHeight;
+        layout = { trackTop, naturalStageTop, height, start, routeEnd,
+            sectionTop: showcase.getBoundingClientRect().top + scroll,
+            finaleTravel: Math.max(0, (naturalStageTop + routeEnd - start - height * 0.1) / 1.2),
+            planetLimit: stage.clientHeight * 0.22,
+            videoHeight: previewVideo.offsetHeight,
+            videoLowTop,
+            videoHighTop };
         scheduleScroll();
     };
     window.addEventListener('resize', updateLayout);
@@ -154,6 +182,5 @@
         resizeObserver.observe(preview);
         resizeObserver.observe(stage);
     }
-    rebuildRoute();
-    updateScroll();
+    updateLayout();
 })();

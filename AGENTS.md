@@ -35,6 +35,12 @@ Keep the homepage order: hero; video on the left with the planet diagram and ext
 
 ## Functional requirements
 
+Video scroll timing: let the preview enter at normal page speed until the complete video and caption are visible low in the viewport. Move it steadily from 70% to 30% of the viewport's spare vertical space while planets pass, then release it after the Sun finale so it scrolls out normally. Base the entry trigger on the actual preview height and track position, not an early section-visibility threshold; constrain video width on short viewports so it can fit.
+
+Keep scroll geometry cached between layout changes. Lenis 1.3.26 owns page-level wheel smoothing through `smooth-scroll.js`; keep the showcase transforms mapped directly to its native scroll position so there is only one interpolation clock. Preserve Lenis anchors and reduced-motion behavior. Move the Sun using a transform rather than changing its layout position on every frame, and keep the Sun above the video as the foreground curtain that ends the showcase.
+
+The Sun's lower mask is deliberately soft, so z-order alone can reveal gameplay through it after the crest passes. Progressively clip the video behind the Sun's leading edge and never reveal covered pixels again during that scroll direction.
+
 Preserve:
 
 - the iPhone App Store link;
