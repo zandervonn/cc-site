@@ -90,11 +90,7 @@
     .game-launchbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .85rem 1rem; background: #10121a; color: rgba(241,239,231,.68); font: 500 .62rem/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
     .game-launchbar a { color: var(--bone); text-decoration: none; }
     .unity-frame { position: relative; width: 100%; height: min(82vh,740px); min-height: 620px; overflow: hidden; background: #231f20; }
-    #unity-canvas { display: block; width: 100%; height: 100%; border: 0; outline: 0; background: #231f20; }
-    #unity-loading { position: absolute; left: 50%; top: 50%; z-index: 2; width: min(320px,70%); transform: translate(-50%,-50%); color: #fff; font: 500 .68rem/1.5 var(--mono); letter-spacing: .1em; text-align: center; text-transform: uppercase; }
-    #unity-progress-track { height: 5px; margin-top: 1rem; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.18); }
-    #unity-progress { width: 0; height: 100%; background: var(--solar); transition: width 120ms linear; }
-    #unity-warning { position: absolute; left: 50%; top: 1rem; z-index: 3; width: min(720px,90%); transform: translateX(-50%); font: 400 .72rem/1.4 var(--mono); }
+    .unity-frame iframe { display: block; width: 100%; height: 100%; border: 0; background: #231f20; }
     .availability { position: relative; z-index: 2; display: grid; grid-template-columns: minmax(280px,.82fr) minmax(360px,1.18fr); gap: clamp(3rem,8vw,9rem); padding: clamp(5rem,9vw,9rem) clamp(1.25rem,5vw,5rem); }
     .media-column { min-width: 0; }
     .gameplay-preview { position: sticky; top: clamp(5rem,9vh,8rem); width: min(100%,430px); margin: 0; }
@@ -193,7 +189,7 @@
       function resizeStars(){const ratio=Math.min(window.devicePixelRatio||1,2);starCanvas.width=Math.round(innerWidth*ratio);starCanvas.height=Math.round(innerHeight*ratio);starCanvas.style.width=innerWidth+'px';starCanvas.style.height=innerHeight+'px';starCtx.setTransform(ratio,0,0,ratio,0,0);buildStars();}
       function drawStars(){starCtx.clearRect(0,0,innerWidth,innerHeight);stars.forEach(star=>{const shiftX=(pointerX-.5)*star.depth*7,shiftY=(pointerY-.5)*star.depth*4,x=((star.x*innerWidth+shiftX)%innerWidth+innerWidth)%innerWidth,y=((star.y*innerHeight-window.scrollY*star.speed+shiftY)%innerHeight+innerHeight)%innerHeight;starCtx.beginPath();starCtx.globalAlpha=star.alpha;starCtx.fillStyle=star.hue>.92?'#ffd9ad':star.hue<.16?'#b8e6ff':'#f4f2ea';if(star.size>1.4){starCtx.shadowColor=starCtx.fillStyle;starCtx.shadowBlur=7;}else{starCtx.shadowBlur=0;}starCtx.arc(x,y,star.size,0,Math.PI*2);starCtx.fill();});starCtx.globalAlpha=1;starCtx.shadowBlur=0;}
       function resize(){const ratio=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(innerWidth*ratio);canvas.height=Math.round(innerHeight*ratio);canvas.style.width=innerWidth+'px';canvas.style.height=innerHeight+'px';ctx.setTransform(ratio,0,0,ratio,0,0);}
-      function alignBeyondCaption(){const section=document.querySelector('.beyond'),sun=section?.querySelector('.solar-threshold'),headline=section?.querySelector('.beyond-copy p'),caption=headline?.querySelector('small');if(!section||!sun||!headline||!caption)return;const topWithin=element=>{let top=0,node=element;while(node&&node!==section){top+=node.offsetTop;node=node.offsetParent;}return top;},sunCenter=topWithin(sun),sunTop=sunCenter-sun.offsetHeight/2,sunBottom=sunCenter+sun.offsetHeight/2,headlineInset=topWithin(headline)-sunTop,captionBottom=topWithin(caption)+caption.offsetHeight;caption.style.setProperty('--beyond-caption-offset',(sunBottom-headlineInset-captionBottom)+'px');}
+      function alignBeyondCaption(){const section=document.querySelector('.beyond'),sun=document.querySelector('.solar-threshold'),headline=document.querySelector('.beyond-copy p'),caption=document.querySelector('.beyond-copy small');if(!section||!sun||!headline||!caption)return;const topWithin=element=>{let top=0,node=element;while(node&&node!==section){top+=node.offsetTop;node=node.offsetParent;}return top;},sunCenter=topWithin(sun),sunTop=sunCenter-sun.offsetHeight/2,sunBottom=sunCenter+sun.offsetHeight/2,headlineInset=topWithin(headline)-sunTop,captionBottom=topWithin(caption)+caption.offsetHeight;caption.style.setProperty('--beyond-caption-offset',(sunBottom-headlineInset-captionBottom)+'px');}
       function impact(){let seed=4817;const particleRandom=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};fragments.length=0;const x=innerWidth*.53,y=innerHeight*.5;for(let i=0;i<150;i++){const a=particleRandom()*Math.PI*2,s=70+particleRandom()*520;fragments.push({x:x+(particleRandom()-.5)*40,y:y+(particleRandom()-.5)*70,vx:Math.cos(a)*s+160,vy:Math.sin(a)*s,size:1+particleRandom()*8,warm:particleRandom()>.28,spin:particleRandom()*Math.PI});}}
       function draw(progress){ctx.clearRect(0,0,innerWidth,innerHeight);const collision=clamp((progress-.31)/.31);if(collision<=0)return;const x=innerWidth*.53,y=innerHeight*.5,t=collision*1.1;ctx.save();ctx.globalAlpha=clamp(1-collision*.9);ctx.strokeStyle='#ffbd2e';ctx.lineWidth=Math.max(1,8*(1-collision));ctx.beginPath();ctx.arc(x,y,collision*Math.max(innerWidth,innerHeight)*.72,0,Math.PI*2);ctx.stroke();ctx.restore();fragments.forEach(f=>{ctx.save();ctx.globalAlpha=clamp(1-collision*.82);ctx.translate(f.x+f.vx*t,f.y+f.vy*t+180*t*t);ctx.rotate(f.spin+t*5);ctx.fillStyle=f.warm?'#ff4d24':'#f1efe7';ctx.fillRect(-f.size/2,-f.size/2,f.size*1.8,f.size);ctx.restore();});}
       // Only forward approach/impact is capped; reverse and post-impact scrolling stay native.
@@ -295,9 +291,7 @@
     <div class="game-shell">
       <div class="game-launchbar"><span>Web player</span><a href="https://zandervonn.itch.io/the-cosmic-clash">Open on itch.io ↗</a></div>
       <div class="unity-frame">
-        <canvas id="unity-canvas" width=960 height=600 tabindex="0" aria-label="Play Cosmic Clash"></canvas>
-        <div id="unity-loading"><div>Loading Cosmic Clash…</div><div id="unity-progress-track"><div id="unity-progress"></div></div></div>
-        <div id="unity-warning"></div>
+        <iframe src="https://itch.io/embed-upload/19194246?color=05060a" title="Play Cosmic Clash" allow="autoplay; fullscreen; gamepad" allowfullscreen loading="lazy"></iframe>
       </div>
     </div>
   </section>
@@ -358,20 +352,5 @@
 
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap"></noscript>
-  <script>
-    (() => {
-      const unityCanvas=document.querySelector('#unity-canvas'),loading=document.querySelector('#unity-loading'),progress=document.querySelector('#unity-progress'),warning=document.querySelector('#unity-warning'),frame=document.querySelector('.unity-frame');
-      let started=false;
-      function showBanner(message,type){const item=document.createElement('div');item.textContent=message;item.style.cssText='padding:10px;margin-bottom:4px;color:#111;background:'+(type==='error'?'#ff6b6b':'#ffd43b');warning.appendChild(item);if(type!=='error')window.setTimeout(()=>item.remove(),5000);}
-      function startGame(){if(started)return;started=true;const buildUrl='Build',loader=document.createElement('script');loader.src=buildUrl+'/Cosmic-Clash-WebGL-v2.1-web3.loader.js';const config={arguments:[],dataUrl:buildUrl+'/Cosmic-Clash-WebGL-v2.1-web3.data.gz',frameworkUrl:buildUrl+'/Cosmic-Clash-WebGL-v2.1-web3.framework.js.gz',
-codeUrl:buildUrl+'/Cosmic-Clash-WebGL-v2.1-web3.wasm.gz',
-streamingAssetsUrl:'StreamingAssets',companyName:"AIvonn",productName:"Cosmic Clash",productVersion:"2.1",showBanner,matchWebGLToCanvasSize:true};
-loader.onload=()=>createUnityInstance(unityCanvas,config,value=>{progress.style.width=(value*100)+'%';}).then(()=>loading.remove()).catch(message=>{loading.remove();showBanner(message,'error');});
-        loader.onerror=()=>{loading.remove();showBanner('The web player could not be loaded. Open it on itch.io instead.','error');};
-        document.body.appendChild(loader);
-      }
-      if('IntersectionObserver' in window){const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){observer.disconnect();startGame();}},{rootMargin:'400px 0px'});observer.observe(frame);}else startGame();
-    })();
-  </script>
 </body>
 </html>
