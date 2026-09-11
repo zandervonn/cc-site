@@ -1,197 +1,377 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#080d1b">
-    <meta name="description" content="A chill game about merging planets all the way to the Sun (and beyond?). Made by one person. Free to play. Never a forced ad. That's Cosmic Clash.">
-    <link rel="canonical" href="https://zandervonn.github.io/">
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#090a10">
+  <meta name="description" content="Cosmic Clash — drop, merge, and evolve planets until the universe gives way.">
+  <title>Cosmic Clash</title>
+  <style>
+    :root {
+      --void: #090a10; --ink: #11121a; --bone: #f1efe7; --paper: #dad7cb;
+      --ember: #ff4d24; --solar: #ffbd2e; --line: rgba(241,239,231,.18);
+      --mono: "DM Mono", monospace; --display: "Anton", Impact, sans-serif;
+      --serif: "Instrument Serif", Georgia, serif;
+    }
+    * { box-sizing: border-box; }
+    html { color-scheme: dark; background: var(--void); scroll-behavior: smooth; }
+    body { min-width: 320px; margin: 0; overflow-x: hidden; background: var(--void); color: var(--bone); font-family: var(--serif); }
+    a, button { color: inherit; }
+    button { font: inherit; }
+    a:focus-visible, button:focus-visible { outline: 2px solid var(--solar); outline-offset: 5px; }
+    .skip-link { position: fixed; left: 1rem; top: 1rem; z-index: 50; padding: .65rem .9rem; transform: translateY(-180%); background: var(--solar); color: var(--ink); font: 500 .72rem/1 var(--mono); text-transform: uppercase; }
+    .skip-link:focus { transform: translateY(0); }
+    .site-mark, .top-cta { position: fixed; top: 1.35rem; z-index: 20; margin: 0; font: 500 .68rem/1 var(--mono); letter-spacing: .13em; text-transform: uppercase; mix-blend-mode: difference; }
+    .site-mark { left: clamp(1.2rem,3vw,3rem); }
+    .top-cta { right: clamp(1.2rem,3vw,3rem); display: inline-flex; align-items: center; gap: .6rem; padding-bottom: .4rem; border-bottom: 1px solid currentColor; text-decoration: none; }
+    .top-cta span { color: var(--solar); transition: transform 180ms ease; }
+    .top-cta:hover span { transform: translate(3px,3px); }
 
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="Cosmic Clash — What game isn’t better in space?">
-    <meta property="og:description" content="A chill game about merging planets all the way to the Sun (and beyond?). Made by one person. Free to play. Never a forced ad.">
-    <meta property="og:url" content="https://zandervonn.github.io/">
-    <meta property="og:image" content="https://zandervonn.github.io/og.png">
-    <meta property="og:image:alt" content="Planets gathering around a sun in Cosmic Clash.">
-    <meta name="twitter:card" content="summary_large_image">
+    .cosmos-backdrop { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: #070810; }
+    #starfield-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .nebula { position: absolute; width: 62vw; aspect-ratio: 1; border-radius: 50%; opacity: .16; filter: blur(80px); mix-blend-mode: screen; }
+    .nebula-a { left: -25vw; top: 8vh; background: radial-gradient(circle,#314b98 0,rgba(38,54,122,.55) 28%,transparent 68%); }
+    .nebula-b { right: -28vw; bottom: -10vh; background: radial-gradient(circle,#792a55 0,rgba(84,30,69,.45) 30%,transparent 70%); }
+    .planet-field { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+    .drift-planet { position: absolute; aspect-ratio: 1; border-radius: 50%; background-position: center; background-size: 205% 100%; box-shadow: inset -22px -15px 38px rgba(0,0,0,.82),0 0 45px rgba(160,198,255,.06); opacity: var(--planet-visibility,0); filter: brightness(.34) saturate(.82); transform: translate3d(var(--planet-drift-x,0),var(--planet-drift-y,0),0) rotate(var(--planet-tilt,0deg)); transition: opacity 240ms linear; will-change: transform,opacity; }
+    .drift-moon { left: 8vw; top: 68vh; width: clamp(34px,4.5vw,70px); background-image: url('https://zandervonn.github.io/assets/materials/moon.jpg'); }
+    .drift-mars { right: 11vw; top: 16vh; width: clamp(58px,7vw,105px); background-image: url('https://zandervonn.github.io/assets/materials/mars.jpg'); }
+    .drift-venus { left: -2rem; top: 28vh; width: clamp(90px,12vw,180px); background-image: url('https://zandervonn.github.io/assets/materials/venus.jpg'); }
+    .drift-earth { right: -4rem; top: 18vh; width: clamp(100px,13vw,195px); background-image: url('https://zandervonn.github.io/assets/materials/earth.jpg'); }
+    .drift-neptune { left: 6vw; top: 63vh; width: clamp(84px,11vw,165px); background-image: url('https://zandervonn.github.io/assets/materials/neptune.jpg'); }
+    .drift-uranus { right: 8vw; top: 66vh; width: clamp(65px,8vw,120px); background-image: url('https://zandervonn.github.io/assets/materials/uranus.jpg'); }
+    .drift-jupiter { right: 4vw; top: 42vh; width: clamp(115px,16vw,240px); background-image: url('https://zandervonn.github.io/assets/materials/jupiter.jpg'); }
+    .impact-story { position: relative; z-index: 1; height: 160vh; background: transparent; color: var(--bone); }
+    .impact-stage { position: sticky; top: 0; height: 100vh; min-height: 560px; overflow: hidden; isolation: isolate; }
+    .impact-stage::before { content: ""; position: absolute; inset: 0; z-index: -2; background: radial-gradient(circle at 53% 52%,rgba(255,189,46,calc(var(--impact,0)*.72)) 0,transparent calc(var(--impact,0)*32%)),linear-gradient(180deg,rgba(7,8,16,.08),rgba(7,8,16,.42)); }
+    .impact-stage::after { content: ""; position: absolute; inset: 0; z-index: 7; pointer-events: none; background: #fff4d8; opacity: var(--flash,0); }
+    #impact-canvas { position: absolute; inset: 0; z-index: 6; width: 100%; height: 100%; pointer-events: none; }
+    .hero-title { position: absolute; left: 50%; top: 50%; z-index: 3; display: flex; width: min(92vw,1440px); justify-content: center; gap: .18em; margin: 0; transform: translate(-50%,-50%); color: var(--bone); font: 400 clamp(4.6rem,14vw,13.5rem)/.82 var(--display); letter-spacing: -.035em; text-align: center; text-transform: uppercase; white-space: nowrap; text-shadow: 0 0 40px rgba(169,234,255,.08); }
+    .hero-word, .hero-letter { display: inline-block; }
+    .hero-letter { transform: translate(var(--tx,0),var(--ty,0)) rotate(var(--rot,0deg)); opacity: var(--letter-opacity,1); will-change: transform,opacity; }
+    .impact-object { position: absolute; left: 0; top: 50%; z-index: 5; width: clamp(135px,21vw,310px); aspect-ratio: 1; transform: translate3d(var(--planet-x,-24vw),calc(-50% + var(--planet-y,0px)),0); opacity: var(--planet-opacity,1); will-change: transform,opacity; }
+    .incoming-planet { position: absolute; inset: 0; border-radius: 50%; transform: rotate(var(--planet-spin,-45deg)); background: #9b7659 url('https://zandervonn.github.io/assets/materials/jupiter.jpg') center / 205% 100%; box-shadow: inset -46px -28px 68px rgba(0,0,0,.72),inset 18px 10px 26px rgba(255,227,183,.22),0 0 calc(30px*var(--impact,0)) rgba(255,77,36,.9); will-change: transform; }
+    .impact-jets { position: absolute; inset: 0; z-index: -1; }
+    .impact-jets span { position: absolute; right: 72%; height: 7%; border-radius: 999px 0 0 999px; transform-origin: right center; background: linear-gradient(90deg,transparent 0,rgba(255,77,36,.6) 48%,rgba(255,189,46,.98) 100%); filter: blur(4px); opacity: var(--trail-opacity,0); }
+    .impact-jets span:nth-child(1) { top: 30%; width: 145%; transform: rotate(5deg); }
+    .impact-jets span:nth-child(2) { top: 43%; width: 190%; height: 3%; transform: rotate(-2deg); filter: blur(1px); }
+    .impact-jets span:nth-child(3) { top: 57%; width: 125%; height: 11%; transform: rotate(-7deg); filter: blur(7px); }
+    .impact-jets span:nth-child(4) { top: 68%; width: 165%; height: 2%; transform: rotate(3deg); filter: blur(1px); }
+    .impact-copy { position: absolute; left: 50%; bottom: 2rem; z-index: 8; margin: 0; transform: translateX(-50%); color: var(--bone); font: 400 clamp(.62rem,1vw,.78rem)/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; white-space: nowrap; opacity: calc(1 - var(--story-progress,0)*3); }
+    .impact-reveal { position: absolute; left: 50%; top: 50%; z-index: 8; width: min(92vw,1280px); transform: translate(-50%,-50%); opacity: var(--impact-reveal-opacity,0); text-align: center; pointer-events: none; }
+    .impact-reveal p { margin: 0; font: italic 400 clamp(3.4rem,8.4vw,9rem)/.88 var(--serif); text-wrap: balance; text-shadow: 0 3px 34px rgba(0,0,0,.72); }
+    .universe { position: relative; z-index: 1; overflow: visible; background: transparent; }
+    .manifesto { position: relative; z-index: 1; display: grid; min-height: 58vh; grid-template-columns: minmax(0,1.55fr) minmax(250px,.75fr); align-items: center; gap: 4rem; padding: clamp(3rem,6vw,6rem) clamp(1.25rem,5vw,5rem); }
+    .eyebrow { margin: 0 0 1.1rem; color: var(--solar); font: 500 .68rem/1.4 var(--mono); letter-spacing: .14em; text-transform: uppercase; }
+    .manifesto h2, .play-header h2 { margin: 0; font: 400 clamp(4.2rem,10.5vw,11.5rem)/.82 var(--display); letter-spacing: -.025em; text-transform: uppercase; }
+    .manifesto h2 { max-width: 13ch; font-size: clamp(3.4rem,7.8vw,8.5rem); }
+    .manifesto h2 em { color: var(--ember); font-family: var(--serif); font-weight: 400; text-transform: none; }
+    .manifesto-aside { padding-bottom: .65rem; }
+    .manifesto-aside p { max-width: 29rem; margin: 0 0 2.4rem; color: var(--paper); font-size: clamp(1.3rem,2vw,1.75rem); line-height: 1.35; }
+    .text-link { display: inline-flex; align-items: center; gap: .75rem; padding-bottom: .45rem; border-bottom: 1px solid currentColor; font: 500 .72rem/1 var(--mono); letter-spacing: .12em; text-decoration: none; text-transform: uppercase; }
+    .text-link::after { content: "↘"; color: var(--ember); transition: transform 180ms ease; }
+    .text-link:hover::after { transform: translate(4px,4px); }
 
-    <title>Cosmic Clash — What game isn’t better in space?</title>
-    <link rel="stylesheet" href="/home.css?v=20260909-3">
-    <link rel="stylesheet" href="https://unpkg.com/lenis@1.3.26/dist/lenis.css">
-    <script src="/starfield.js?v=20260909-3" defer></script>
-    <script src="https://unpkg.com/lenis@1.3.26/dist/lenis.min.js" defer></script>
-    <script src="/smooth-scroll.js?v=20260909-3" defer></script>
-    <script src="/gameplay.js?v=20260909-3" defer></script>
+    .beyond { position: relative; z-index: 1; isolation: isolate; display: grid; min-height: 90vh; place-items: center; overflow: visible; }
+    .beyond::before { content: ""; position: absolute; z-index: 0; inset: -24% 0; background: radial-gradient(circle at 50% 54%,rgba(255,189,46,.2) 0,rgba(255,77,36,.12) 26%,rgba(255,111,32,.055) 43%,transparent 68%); pointer-events: none; }
+    .solar-threshold { position: absolute; z-index: 1; left: 50%; top: 56%; width: min(68vw,760px); aspect-ratio: 1; transform: translate(-50%,-50%); border-radius: 50%; background: #ef6a1f url('https://zandervonn.github.io/assets/materials/sun.jpg') center / 205% 100%; box-shadow: inset -45px -35px 100px rgba(109,9,30,.48),0 0 45px 8px rgba(255,189,46,.74),0 0 88px 24px rgba(255,77,36,.2); }
+    .solar-threshold::before { content: ""; position: absolute; inset: -7%; border: 1px solid rgba(255,214,75,.54); border-radius: 48% 52% 49% 51%; filter: blur(3px); }
+    .solar-threshold::after { content: ""; position: absolute; inset: 8%; border-radius: 50%; background: radial-gradient(circle at 62% 25%,rgba(255,255,255,.34) 0 2%,transparent 3%),radial-gradient(circle at 28% 67%,rgba(121,18,36,.2) 0 6%,transparent 7%),transparent; }
+    .beyond-copy { position: relative; z-index: 2; width: min(90vw,1100px); text-align: center; }
+    .beyond-copy p { margin: 0; font: italic 400 clamp(3.1rem,7.6vw,8rem)/.9 var(--serif); text-shadow: 0 2px 30px #52101a; }
+    .beyond-copy small { display: block; width: max-content; margin: clamp(6rem,10vw,10rem) auto 0; transform: translateY(var(--beyond-caption-offset,0px)); color: #fff; font: 500 clamp(.68rem,1vw,.82rem)/1.3 var(--mono); letter-spacing: .16em; text-shadow: 0 2px 14px rgba(40,0,8,.92); text-transform: uppercase; }
+
+    .play-zone { position: relative; z-index: 2; min-height: 100vh; padding: clamp(5rem,9vw,9rem) clamp(1.25rem,5vw,5rem); background: transparent; color: var(--bone); }
+    .play-header { display: grid; grid-template-columns: 1.2fr .8fr; gap: 3rem; align-items: end; margin-bottom: clamp(2.5rem,5vw,5rem); }
+    .play-header h2 { max-width: 10ch; }
+    .play-header p { max-width: 29rem; margin: 0 0 .5rem; font-size: clamp(1.25rem,2.1vw,1.9rem); line-height: 1.35; }
+    .game-shell { position: relative; width: min(100%,1120px); margin: 0 auto; overflow: hidden; border-radius: 1rem; background: #05060a; box-shadow: 0 35px 120px rgba(0,0,0,.42),0 0 80px rgba(80,107,190,.08); }
+    .game-launchbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .85rem 1rem; background: #10121a; color: rgba(241,239,231,.68); font: 500 .62rem/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+    .game-launchbar a { color: var(--bone); text-decoration: none; }
+    .unity-frame { position: relative; width: 100%; height: min(82vh,740px); min-height: 620px; overflow: hidden; background: #231f20; }
+    #unity-canvas { display: block; width: 100%; height: 100%; border: 0; outline: 0; background: #231f20; }
+    #unity-loading { position: absolute; left: 50%; top: 50%; z-index: 2; width: min(320px,70%); transform: translate(-50%,-50%); color: #fff; font: 500 .68rem/1.5 var(--mono); letter-spacing: .1em; text-align: center; text-transform: uppercase; }
+    #unity-progress-track { height: 5px; margin-top: 1rem; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.18); }
+    #unity-progress { width: 0; height: 100%; background: var(--solar); transition: width 120ms linear; }
+    #unity-warning { position: absolute; left: 50%; top: 1rem; z-index: 3; width: min(720px,90%); transform: translateX(-50%); font: 400 .72rem/1.4 var(--mono); }
+    .availability { position: relative; z-index: 2; display: grid; grid-template-columns: minmax(280px,.82fr) minmax(360px,1.18fr); gap: clamp(3rem,8vw,9rem); padding: clamp(5rem,9vw,9rem) clamp(1.25rem,5vw,5rem); }
+    .media-column { min-width: 0; }
+    .gameplay-preview { position: sticky; top: clamp(5rem,9vh,8rem); width: min(100%,430px); margin: 0; }
+    .gameplay-preview video { display: block; width: 100%; height: min(76vh,820px); border-radius: 1rem; background: #05060a; box-shadow: 0 28px 90px rgba(0,0,0,.38); object-fit: cover; }
+    .gameplay-preview figcaption { display: flex; justify-content: space-between; gap: 1rem; margin-top: .85rem; color: rgba(241,239,231,.66); font: 500 .62rem/1.4 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+    .download-rail { display: grid; gap: 12vh; }
+    .access-panel { display: grid; min-height: 78vh; align-content: center; }
+    .access-panel h2,.access-panel h3 { max-width: 12ch; margin: 0 0 1.5rem; font: 400 clamp(3rem,6vw,6.6rem)/.9 var(--display); letter-spacing: -.02em; text-transform: uppercase; }
+    .access-panel h3 { font-family: var(--serif); font-size: clamp(2.8rem,5vw,5.5rem); font-style: italic; font-weight: 400; text-transform: none; }
+    .access-panel>p:not(.eyebrow) { max-width: 36rem; margin: 0 0 2rem; color: var(--paper); font-size: clamp(1.15rem,1.7vw,1.45rem); line-height: 1.42; }
+    .panel-icon { display: grid; width: 3.5rem; height: 3.5rem; place-items: center; margin-bottom: 1.7rem; border-radius: 50%; background: rgba(255,189,46,.12); color: var(--solar); }
+    .panel-icon svg { width: 1.6rem; height: 1.6rem; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
+    .primary-link { display: inline-flex; gap: .65rem; align-items: center; padding: 1rem 1.2rem; background: var(--ember); color: var(--bone); font: 500 .72rem/1 var(--mono); letter-spacing: .1em; text-decoration: none; text-transform: uppercase; transition: transform 180ms ease,background 180ms ease; }
+    .primary-link:hover { transform: translateY(-3px); background: #ff623e; }
+    form { display: grid; gap: 1rem; }
+    label { font: 500 .64rem/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+    input,textarea { width: 100%; border: 0; border-bottom: 1px solid rgba(241,239,231,.32); border-radius: 0; padding: .9rem 0; outline: 0; background: transparent; color: var(--bone); font: 400 1rem/1.4 var(--mono); }
+    textarea { resize: vertical; }
+    input:focus,textarea:focus { border-bottom-color: var(--solar); }
+    .form-row { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: end; }
+    form button { border: 0; padding: 1rem 1.2rem; background: var(--solar); color: var(--ink); cursor: pointer; font: 500 .68rem/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+    .form-note,.support-note,.support-direct { margin: 0; color: rgba(241,239,231,.58); font: 400 .68rem/1.55 var(--mono); }
+    .form-note a,.support-direct a { color: var(--bone); }
+    .support-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .support-field { display: grid; gap: .2rem; }
+    .support-message { grid-column: 1 / -1; }
+    footer { position: relative; z-index: 2; display: flex; justify-content: space-between; gap: 2rem; padding: 2rem clamp(1.25rem,5vw,5rem) 2.5rem; background: transparent; color: rgba(241,239,231,.65); font: 400 .62rem/1.4 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+    footer nav { display: flex; gap: 1.5rem; }
+    .reveal { opacity: 0; transform: translateY(45px); transition: opacity 700ms ease,transform 850ms cubic-bezier(.2,.8,.2,1); }
+    .reveal.is-visible { opacity: 1; transform: translateY(0); }
+
+    @media (max-width:760px) {
+      .top-cta { top: 1.2rem; right: 1.2rem; }
+      .impact-story { height: 150vh; }
+      .hero-title { flex-direction: column; gap: 0; font-size: clamp(5rem,24vw,8rem); white-space: normal; }
+      .impact-object { width: clamp(118px,38vw,180px); }
+      .manifesto,.play-header { grid-template-columns: 1fr; }
+      .manifesto { min-height: 64vh; align-content: center; padding-top: 3rem; }
+      .manifesto h2 { font-size: clamp(3.5rem,16vw,6.5rem); }
+      .beyond { min-height: 80vh; }
+      .solar-threshold { width: 92vw; }
+      .unity-frame { height: 72vh; min-height: 520px; }
+      .availability { grid-template-columns: 1fr; }
+      .gameplay-preview { position: relative; top: auto; width: min(100%,430px); margin: 0 auto; }
+      .gameplay-preview video { height: auto; aspect-ratio: 480 / 1044; }
+      .download-rail { gap: 3rem; }
+      .access-panel { min-height: auto; padding: 3rem 0; }
+      .support-fields,.form-row { grid-template-columns: 1fr; }
+      .support-message { grid-column: auto; }
+      footer { flex-direction: column; }
+    }
+    @media (prefers-reduced-motion:reduce) {
+      html { scroll-behavior: auto; }
+      .reveal,.hero-letter,.incoming-planet,.text-link::after,.top-cta span,.primary-link { transition: none; }
+      .impact-object { display: none; }
+    }
+  </style>
 </head>
 <body>
-    <a class="skip-link" href="#main">Skip to content</a>
+  <div class="cosmos-backdrop" aria-hidden="true"><canvas id="starfield-canvas"></canvas><div class="nebula nebula-a"></div><div class="nebula nebula-b"></div></div>
+  <div class="planet-field" aria-hidden="true">
+    <span class="drift-planet drift-moon" data-start="-.08" data-end=".16" data-drift=".035"></span>
+    <span class="drift-planet drift-mars" data-start=".05" data-end=".28" data-drift="-.045"></span>
+    <span class="drift-planet drift-venus" data-start=".18" data-end=".42" data-drift=".03"></span>
+    <span class="drift-planet drift-earth" data-start=".31" data-end=".55" data-drift="-.035"></span>
+    <span class="drift-planet drift-neptune" data-start=".44" data-end=".68" data-drift=".045"></span>
+    <span class="drift-planet drift-uranus" data-start=".57" data-end=".79" data-drift="-.03"></span>
+    <span class="drift-planet drift-jupiter" data-start=".81" data-end="1.08" data-drift="-.025"></span>
+  </div>
+  <a class="skip-link" href="#main">Skip the collision</a>
+  <p class="site-mark">Cosmic Clash®</p>
+  <a class="top-cta" href="#get-cosmic-clash">Play / download <span aria-hidden="true">↘</span></a>
+  <header class="impact-story" aria-label="Cosmic Clash introduction">
+    <div class="impact-stage">
+      <canvas id="impact-canvas" aria-hidden="true"></canvas>
+      <h1 class="hero-title" aria-label="Cosmic Clash"><span class="hero-word">Cosmic</span><span class="hero-word">Clash</span></h1>
+      <div class="impact-object" aria-hidden="true"><div class="impact-jets"><span></span><span></span><span></span><span></span></div><div class="incoming-planet"></div></div>
+      <p class="impact-copy">Scroll to start the collision ↓</p>
+      <div class="impact-reveal" aria-hidden="true"><p>Because what game isn’t better in space?</p></div>
+    </div>
+  </header>
+  <script>
+    (() => {
+      const story=document.querySelector('.impact-story'),stage=document.querySelector('.impact-stage'),impactObject=document.querySelector('.impact-object'),planet=document.querySelector('.incoming-planet'),title=document.querySelector('.hero-title'),canvas=document.querySelector('#impact-canvas'),ctx=canvas.getContext('2d'),starCanvas=document.querySelector('#starfield-canvas'),starCtx=starCanvas.getContext('2d'),driftPlanets=[...document.querySelectorAll('.drift-planet')];
+      const motionPreference=window.matchMedia('(prefers-reduced-motion: reduce)'),fragments=[];
+      // Maximum hero progress per second, not a playback duration or queued destination.
+      const heroMaxProgressPerSecond=1.875,heroCapEndProgress=.62,heroInputWindow=.06,heroSmoothTime=.018;
+      let reduced=motionPreference.matches,last=-1,pendingScroll=0,heroScrollFrame=0,heroScrollTime=performance.now(),lastHeroInput=0,heroScrollPosition=null,smoothHeroInput=false,touchPoint=null,stars=[],starSeed=73421,pointerX=.5,pointerY=.5;
+      document.documentElement.id='top';
+      document.querySelectorAll('.hero-word').forEach(word=>{const value=word.textContent;word.textContent='';[...value].forEach(character=>{const span=document.createElement('span');span.className='hero-letter';span.textContent=character;word.appendChild(span);});});
+      const letters=[...document.querySelectorAll('.hero-letter')];
+      const clamp=(v,min=0,max=1)=>Math.min(max,Math.max(min,v));
+      const ease=v=>1-Math.pow(1-clamp(v),3);
+      function random(){starSeed=(starSeed*1664525+1013904223)>>>0;return starSeed/4294967296;}
+      function buildStars(){starSeed=73421;stars=[];[[170,.018,.48,.48],[135,.045,.78,.62],[95,.095,1.15,.78],[42,.17,1.85,.94]].forEach((layer,depth)=>{for(let i=0;i<layer[0];i++){const clustered=random()<.28,band=.22+random()*.58;stars.push({x:random(),y:clustered?clamp(band+(random()-.5)*.16):random(),speed:layer[1],size:layer[2]*(.55+random()*.9),alpha:layer[3]*(.48+random()*.52),depth:depth+1,hue:random()});}});}
+      function resizeStars(){const ratio=Math.min(window.devicePixelRatio||1,2);starCanvas.width=Math.round(innerWidth*ratio);starCanvas.height=Math.round(innerHeight*ratio);starCanvas.style.width=innerWidth+'px';starCanvas.style.height=innerHeight+'px';starCtx.setTransform(ratio,0,0,ratio,0,0);buildStars();}
+      function drawStars(){starCtx.clearRect(0,0,innerWidth,innerHeight);stars.forEach(star=>{const shiftX=(pointerX-.5)*star.depth*7,shiftY=(pointerY-.5)*star.depth*4,x=((star.x*innerWidth+shiftX)%innerWidth+innerWidth)%innerWidth,y=((star.y*innerHeight-window.scrollY*star.speed+shiftY)%innerHeight+innerHeight)%innerHeight;starCtx.beginPath();starCtx.globalAlpha=star.alpha;starCtx.fillStyle=star.hue>.92?'#ffd9ad':star.hue<.16?'#b8e6ff':'#f4f2ea';if(star.size>1.4){starCtx.shadowColor=starCtx.fillStyle;starCtx.shadowBlur=7;}else{starCtx.shadowBlur=0;}starCtx.arc(x,y,star.size,0,Math.PI*2);starCtx.fill();});starCtx.globalAlpha=1;starCtx.shadowBlur=0;}
+      function resize(){const ratio=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(innerWidth*ratio);canvas.height=Math.round(innerHeight*ratio);canvas.style.width=innerWidth+'px';canvas.style.height=innerHeight+'px';ctx.setTransform(ratio,0,0,ratio,0,0);}
+      function alignBeyondCaption(){const section=document.querySelector('.beyond'),sun=section?.querySelector('.solar-threshold'),headline=section?.querySelector('.beyond-copy p'),caption=headline?.querySelector('small');if(!section||!sun||!headline||!caption)return;const topWithin=element=>{let top=0,node=element;while(node&&node!==section){top+=node.offsetTop;node=node.offsetParent;}return top;},sunCenter=topWithin(sun),sunTop=sunCenter-sun.offsetHeight/2,sunBottom=sunCenter+sun.offsetHeight/2,headlineInset=topWithin(headline)-sunTop,captionBottom=topWithin(caption)+caption.offsetHeight;caption.style.setProperty('--beyond-caption-offset',(sunBottom-headlineInset-captionBottom)+'px');}
+      function impact(){let seed=4817;const particleRandom=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};fragments.length=0;const x=innerWidth*.53,y=innerHeight*.5;for(let i=0;i<150;i++){const a=particleRandom()*Math.PI*2,s=70+particleRandom()*520;fragments.push({x:x+(particleRandom()-.5)*40,y:y+(particleRandom()-.5)*70,vx:Math.cos(a)*s+160,vy:Math.sin(a)*s,size:1+particleRandom()*8,warm:particleRandom()>.28,spin:particleRandom()*Math.PI});}}
+      function draw(progress){ctx.clearRect(0,0,innerWidth,innerHeight);const collision=clamp((progress-.31)/.31);if(collision<=0)return;const x=innerWidth*.53,y=innerHeight*.5,t=collision*1.1;ctx.save();ctx.globalAlpha=clamp(1-collision*.9);ctx.strokeStyle='#ffbd2e';ctx.lineWidth=Math.max(1,8*(1-collision));ctx.beginPath();ctx.arc(x,y,collision*Math.max(innerWidth,innerHeight)*.72,0,Math.PI*2);ctx.stroke();ctx.restore();fragments.forEach(f=>{ctx.save();ctx.globalAlpha=clamp(1-collision*.82);ctx.translate(f.x+f.vx*t,f.y+f.vy*t+180*t*t);ctx.rotate(f.spin+t*5);ctx.fillStyle=f.warm?'#ff4d24':'#f1efe7';ctx.fillRect(-f.size/2,-f.size/2,f.size*1.8,f.size);ctx.restore();});}
+      // Only forward approach/impact is capped; reverse and post-impact scrolling stay native.
+      function storyBounds(){const top=story.offsetTop,travel=Math.max(0,story.offsetHeight-innerHeight);return{top,travel,end:top+travel*heroCapEndProgress};}
+      function cancelHeroScroll(){cancelAnimationFrame(heroScrollFrame);heroScrollFrame=0;pendingScroll=0;heroScrollPosition=null;heroScrollTime=performance.now();}
+      function applyHeroScroll(timestamp){
+        heroScrollFrame=0;
+        const inputAge=(timestamp-lastHeroInput)/1000;
+        if(inputAge>.2){cancelHeroScroll();return;} // Never resume stale input after a stalled frame.
+        const bounds=storyBounds(),current=scrollY;
+        const elapsed=clamp((timestamp-heroScrollTime)/1000,0,.05);
+        heroScrollTime=timestamp;
+        const step=bounds.travel*heroMaxProgressPerSecond*elapsed;
+        const entry=clamp(heroScrollPosition??current,bounds.top,bounds.end);
+        const eased=smoothHeroInput&&inputAge<.12&&pendingScroll>.1?pendingScroll*(1-Math.exp(-elapsed/heroSmoothTime)):pendingScroll;
+        const advance=Math.min(step,eased);
+        pendingScroll=Math.max(0,pendingScroll-advance);
+        heroScrollPosition=clamp(entry+advance,bounds.top,bounds.end);
+        window.scrollTo({top:heroScrollPosition,behavior:'instant'});
+        drawStars();render();
+        if(pendingScroll>0&&scrollY<bounds.end-1){heroScrollFrame=requestAnimationFrame(applyHeroScroll);}
+        else{pendingScroll=0;heroScrollPosition=null;}
+      }
+      function capHeroScroll(delta,event,smooth=false){
+        if(delta<0){cancelHeroScroll();return false;}
+        if(reduced||!event.cancelable||event.defaultPrevented||!delta)return false;
+        const bounds=storyBounds(),current=scrollY,destination=current+delta;
+        // Browsers round scroll positions; a fractional endpoint must not trap the next gesture.
+        const intersects=current<bounds.end-1&&destination>bounds.top;
+        if(bounds.end<=bounds.top||!intersects){cancelHeroScroll();return false;}
+        event.preventDefault();
+        smoothHeroInput=smooth;
+        lastHeroInput=performance.now();
+        // Spread wheel packets over a few frames, retaining at most 60 ms of capped travel.
+        // Slow input keeps its distance; excess fast input is discarded, never queued for the full hero.
+        const entry=clamp(current,bounds.top,bounds.end),insideDelta=delta-(entry-current);
+        pendingScroll=Math.min(pendingScroll+insideDelta,bounds.travel*heroMaxProgressPerSecond*(smooth?heroInputWindow:1/60));
+        if(!heroScrollFrame){
+          // Idle time cannot become credit for a large jump on the first gesture.
+          if(performance.now()-heroScrollTime>100)heroScrollTime=performance.now()-1000/60;
+          heroScrollFrame=requestAnimationFrame(applyHeroScroll);
+        }
+        return true;
+      }
+      function render(){const rect=story.getBoundingClientRect(),travel=story.offsetHeight-innerHeight,progress=reduced?(rect.top<0?1:0):clamp((heroScrollPosition===null?-rect.top:heroScrollPosition-story.offsetTop)/Math.max(1,travel)),pageProgress=clamp(scrollY/Math.max(1,document.documentElement.scrollHeight-innerHeight));driftPlanets.forEach(item=>{const start=Number(item.dataset.start),end=Number(item.dataset.end),fade=Math.min(.07,(end-start)*.36),visibility=clamp(Math.min((pageProgress-start)/fade,(end-pageProgress)/fade));item.style.setProperty('--planet-visibility',visibility.toFixed(3));item.style.setProperty('--planet-drift-x',((pageProgress-start)*innerWidth*Number(item.dataset.drift))+'px');item.style.setProperty('--planet-drift-y',((pageProgress-start)*innerHeight*Number(item.dataset.drift)*-1.6)+'px');});if(Math.abs(progress-last)<.00001)return;last=progress;const approach=clamp(progress/.31),collision=clamp((progress-.31)/.22),exit=clamp((progress-.58)/.25),startX=-impactObject.offsetWidth-80,impactX=innerWidth*.48-impactObject.offsetWidth*.5;stage.style.setProperty('--story-progress',progress.toFixed(3));stage.style.setProperty('--impact',collision.toFixed(3));stage.style.setProperty('--flash',(Math.max(0,1-Math.abs(progress-.36)*42)*.88).toFixed(3));stage.style.setProperty('--trail-opacity',clamp(approach*1.2-collision).toFixed(3));stage.style.setProperty('--impact-reveal-opacity',clamp((progress-.57)/.13).toFixed(3));impactObject.style.setProperty('--planet-x',(startX+approach*(impactX-startX)+collision*innerWidth*.7)+'px');impactObject.style.setProperty('--planet-y','0px');impactObject.style.setProperty('--planet-opacity',clamp(1-exit*1.5).toFixed(3));planet.style.setProperty('--planet-spin',(-45+progress*520)+'deg');letters.forEach((letter,index)=>{const d=index-(letters.length-1)/2,seed=(index*47)%13-6,local=ease(collision);letter.style.setProperty('--tx',(local*(d*18+seed*7))+'px');letter.style.setProperty('--ty',(local*(seed*12+Math.abs(d)*6))+'px');letter.style.setProperty('--rot',(local*(d*7+seed*4))+'deg');letter.style.setProperty('--letter-opacity',clamp(1-collision*1.35).toFixed(3));});title.style.filter=collision>0?`blur(${collision*1.7}px)`:'none';draw(progress);}
+      let ticking=false;function frame(){if(ticking)return;ticking=true;requestAnimationFrame(()=>{drawStars();render();ticking=false;});}
+      const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting)entry.target.classList.add('is-visible');}),{threshold:.16});
+      // Bind the hero before parsing the external player or loading fonts.
+      window.addEventListener('wheel',event=>{
+        if(event.ctrlKey||event.metaKey||Math.abs(event.deltaX)>Math.abs(event.deltaY))return;
+        const scale=event.deltaMode===1?20:event.deltaMode===2?innerHeight:1;
+        capHeroScroll(event.deltaY*scale,event,true);
+      },{passive:false});
+      window.addEventListener('touchstart',event=>{
+        cancelHeroScroll();
+        touchPoint=event.touches.length===1?{x:event.touches[0].clientX,y:event.touches[0].clientY}:null;
+      },{passive:true});
+      window.addEventListener('touchmove',event=>{
+        if(!touchPoint||event.touches.length!==1){touchPoint=null;cancelHeroScroll();return;}
+        const touch=event.touches[0],dx=touchPoint.x-touch.clientX,dy=touchPoint.y-touch.clientY;
+        touchPoint={x:touch.clientX,y:touch.clientY};
+        if(Math.abs(dy)>=Math.abs(dx))capHeroScroll(dy,event);
+      },{passive:false});
+      window.addEventListener('touchend',()=>{touchPoint=null;},{passive:true});
+      window.addEventListener('touchcancel',()=>{touchPoint=null;cancelHeroScroll();},{passive:true});
+      window.addEventListener('blur',cancelHeroScroll);
+      window.addEventListener('keydown',cancelHeroScroll);
+      window.addEventListener('pointerdown',cancelHeroScroll,{passive:true});
+      window.addEventListener('scroll',frame,{passive:true});
+      window.addEventListener('pointermove',event=>{if(reduced)return;pointerX=event.clientX/innerWidth;pointerY=event.clientY/innerHeight;frame();},{passive:true});
+      window.addEventListener('resize',()=>{cancelHeroScroll();resize();resizeStars();alignBeyondCaption();impact();last=-1;frame();});
+      motionPreference.addEventListener('change',event=>{reduced=event.matches;cancelHeroScroll();last=-1;frame();});
+      document.addEventListener('DOMContentLoaded',()=>{
+        alignBeyondCaption();
+        document.querySelectorAll('.reveal').forEach(element=>observer.observe(element));
+        const gameplayVideo=document.querySelector('.gameplay-preview video');
+        if(gameplayVideo&&!reduced){
+          const videoObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{
+            if(entry.isIntersecting)entry.target.play().catch(()=>{});
+            else entry.target.pause();
+          }),{threshold:.35});
+          videoObserver.observe(gameplayVideo);
+        }
+        last=-1;frame();
+      },{once:true});
+      if(document.fonts)document.fonts.addEventListener('loadingdone',()=>{alignBeyondCaption();last=-1;frame();});
+      resize();resizeStars();impact();drawStars();render();
+    })();
+  </script>
+  <main id="main" class="universe">
+    <section class="manifesto">
+      <div class="reveal"><p class="eyebrow">The whole universe is in your hands</p><h2>A chill game about merging planets.</h2></div>
+      <div class="manifesto-aside reveal"><p>Made by one person. Free to play. Never a forced ad.</p><a class="text-link" href="#play">Play in your browser</a></div>
+    </section>
+    <section class="beyond" aria-label="Merge to the sun"><div class="solar-threshold" aria-hidden="true"></div><div class="beyond-copy reveal"><p>Merge all the way to the sun<small>(and beyond??)</small></p></div></section>
+  </main>
+  <section id="play" class="play-zone" aria-labelledby="play-title">
+    <div class="play-header"><div><p class="eyebrow">No tutorial for gravity</p><h2 id="play-title">Play Cosmic Clash</h2></div><p>Two matching planets make a bigger one. Simple enough. Until you’re convinced you can squeeze in just one more.</p></div>
+    <div class="game-shell">
+      <div class="game-launchbar"><span>Web player</span><a href="https://zandervonn.itch.io/the-cosmic-clash">Open on itch.io ↗</a></div>
+      <div class="unity-frame">
+        <canvas id="unity-canvas" width=960 height=600 tabindex="0" aria-label="Play Cosmic Clash"></canvas>
+        <div id="unity-loading"><div>Loading Cosmic Clash…</div><div id="unity-progress-track"><div id="unity-progress"></div></div></div>
+        <div id="unity-warning"></div>
+      </div>
+    </div>
+  </section>
+  <section id="get-cosmic-clash" class="availability" aria-labelledby="availability-title">
+    <div class="media-column">
+      <figure class="gameplay-preview reveal">
+        <video width="480" height="1044" muted loop playsinline controls preload="metadata" poster="https://zandervonn.github.io/assets/video/cosmic-clash-gameplay.jpg" aria-label="Cosmic Clash gameplay: aim planets and merge matching pairs"><source src="https://zandervonn.github.io/assets/video/cosmic-clash-gameplay.mp4" type="video/mp4"><a href="https://zandervonn.github.io/assets/video/cosmic-clash-gameplay.mp4">Watch Cosmic Clash gameplay</a></video>
+        <figcaption><span>Cosmic Clash in motion</span><span>Gameplay / 00:24</span></figcaption>
+      </figure>
+    </div>
+    <div class="download-rail">
+      <article class="access-panel reveal">
+        <span class="panel-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"></rect><path d="M10 18h4"></path></svg></span>
+        <p class="eyebrow">Available now</p>
+        <h2 id="availability-title">Play on iPhone.</h2>
+        <p>Free to play. Never a forced ad. Take the whole universe with you.</p>
+        <a class="primary-link" href="https://apps.apple.com/pt/app/the-cosmic-clash/id6484504761">Download for iPhone <span aria-hidden="true">↗</span></a>
+      </article>
+      <article id="android" class="access-panel reveal">
+        <span class="panel-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 9h12v9a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V9Z"></path><path d="m8 5-2-2m10 2 2-2M9 13h.01M15 13h.01M9 9V7a3 3 0 0 1 6 0v2"></path></svg></span>
+        <p class="eyebrow">Testing now</p>
+        <h2>Android is still in orbit.</h2>
+        <p>Access is invite-only for the moment. Leave the Google Play email you want added to the tester list.</p>
+        <form class="android-form" action="https://formsubmit.co/zandervonn@gmail.com" method="POST">
+          <input type="hidden" name="_subject" value="New Cosmic Clash Android access request">
+          <input type="hidden" name="_template" value="table">
+          <input type="hidden" name="_next" value="https://zandervonn.github.io/android-access-received.html">
+          <input type="hidden" name="Request" value="Cosmic Clash Android tester access">
+          <input class="honeypot" type="text" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true" hidden>
+          <label for="android-google-email">Google Play email</label>
+          <div class="form-row"><input id="android-google-email" type="email" name="email" autocomplete="email" inputmode="email" placeholder="you@example.com" required><button type="submit">Request access</button></div>
+          <p class="form-note">Used only for tester access. <a href="https://play.google.com/store/apps/details?id=com.AIvonn.TheCosmicClash">Already invited? Open Google Play ↗</a></p>
+        </form>
+      </article>
+      <article id="support" class="access-panel reveal">
+        <span class="panel-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4V5Z"></path><path d="M8 9h8M8 12h5"></path></svg></span>
+        <p class="eyebrow">Feedback</p>
+        <h3>Found a bug or have an idea?</h3>
+        <p>Send a note with what happened and the device you were playing on. Prefer email? <a href="mailto:zandervonn@gmail.com">zandervonn@gmail.com</a></p>
+        <form class="support-form" action="https://formsubmit.co/zandervonn@gmail.com" method="POST">
+          <input type="hidden" name="_subject" value="New Cosmic Clash support message">
+          <input type="hidden" name="_template" value="table">
+          <input type="hidden" name="_next" value="https://zandervonn.github.io/support-message-received.html">
+          <input type="hidden" name="Request" value="Cosmic Clash support">
+          <input class="honeypot" type="text" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true" hidden>
+          <div class="support-fields">
+            <div class="support-field"><label for="support-email">Your email</label><input id="support-email" type="email" name="email" placeholder="you@example.com" autocomplete="email" inputmode="email" required></div>
+            <div class="support-field"><label for="support-device">Device (optional)</label><input id="support-device" type="text" name="Device" placeholder="iPhone 15, Pixel 9 or Web"></div>
+            <div class="support-field support-message"><label for="support-message">Message</label><textarea id="support-message" name="Message" rows="5" placeholder="What happened, or what would you like to see?" required></textarea></div>
+          </div>
+          <button type="submit">Send message</button>
+          <p class="support-note">Used only to respond to your support request.</p>
+        </form>
+      </article>
+    </div>
+  </section>
+  <footer><span>Made by Alexander von Neudegg.</span><nav aria-label="Footer navigation"><a href="#support">Support</a><a href="https://zandervonn.github.io/privacy-policy.html">Privacy</a><a href="#top">Return to orbit ↑</a></nav></footer>
 
-    <header class="site-header">
-        <a class="wordmark" href="/" aria-label="Cosmic Clash home">Cosmic Clash</a>
-        <nav aria-label="Primary navigation">
-            <a href="https://apps.apple.com/pt/app/the-cosmic-clash/id6484504761">iPhone</a>
-            <a href="#android">Android test</a>
-            <a href="/privacy-policy.html">Privacy</a>
-        </nav>
-    </header>
-
-    <main id="main">
-        <section class="introduction" aria-labelledby="introduction-title">
-            <div class="introduction-copy">
-                <h1 id="introduction-title">What game isn’t better in space?</h1>
-                <p class="introduction-text">
-                    A chill game about merging planets all the way to the Sun
-                    (and beyond?). Made by one person. Free to play. Never a forced ad.
-                    I think you’ll love it. Or your money back. (It’s free.)
-                </p>
-                <div class="introduction-links">
-                    <a class="primary-link" href="https://apps.apple.com/pt/app/the-cosmic-clash/id6484504761">
-                        Get Cosmic Clash for iPhone <span aria-hidden="true">↗</span>
-                    </a>
-                    <a href="#android">Join the Android test</a>
-                </div>
-            </div>
-
-
-        </section>
-
-        <section class="gameplay-showcase" id="gameplay" aria-label="Cosmic Clash in motion">
-            <div class="video-track">
-            <figure class="gameplay-preview">
-                <video id="gameplay-video" width="480" height="1044" muted loop playsinline controls preload="none" poster="/assets/video/cosmic-clash-gameplay.jpg" aria-label="Cosmic Clash gameplay: aim planets and merge matching pairs">
-                    <source src="/assets/video/cosmic-clash-gameplay.mp4" type="video/mp4">
-                    <a href="/assets/video/cosmic-clash-gameplay.mp4">Watch Cosmic Clash gameplay</a>
-                </video>
-                <figcaption>
-                    <span>Just one more planet.</span>
-                    <button class="video-toggle" type="button" aria-controls="gameplay-video" hidden>Play gameplay</button>
-                </figcaption>
-            </figure>
-            </div>
-            <div class="planet-column" aria-hidden="true">
-                <div class="orbit-stage">
-                    <svg class="orbit-path" aria-hidden="true">
-                        <defs>
-                            <mask id="orbit-reveal-mask" maskUnits="userSpaceOnUse">
-                                <path class="orbit-reveal" fill="none" stroke="white" stroke-width="8" pathLength="1"></path>
-                            </mask>
-                        </defs>
-                        <path class="orbit-route" mask="url(#orbit-reveal-mask)"></path>
-                    </svg>
-                    <span class="planet orbit-pluto surface-pluto"><img src="/assets/materials/moon.jpg" alt="" width="318" height="159"></span>
-                    <span class="planet orbit-mercury-two"><img src="/assets/materials/moon.jpg" alt="" width="318" height="159"></span>
-                    <span class="planet orbit-mars"><img src="/assets/materials/mars.jpg" alt="" width="318" height="159"></span>
-                    <span class="planet orbit-venus"><img src="/assets/materials/venus.jpg" alt="" width="318" height="159"></span>
-                    <span class="planet orbit-earth"><img src="/assets/materials/earth.jpg" alt="" width="318" height="159"></span>
-                    <span class="planet orbit-neptune surface-neptune"><img src="/assets/materials/neptune.jpg" alt="" width="640" height="320" loading="lazy"></span>
-                    <span class="planet orbit-uranus ringed-planet ringed-uranus"><span class="planet-surface"><img src="/assets/materials/uranus.jpg" alt="" width="640" height="320" loading="lazy"></span></span>
-                    <span class="planet orbit-saturn ringed-planet ringed-saturn"><span class="planet-surface"><img src="/assets/materials/saturn.jpg" alt="" width="640" height="320" loading="lazy"></span></span>
-                    <span class="planet orbit-jupiter"><img src="/assets/materials/jupiter.jpg" alt="" width="640" height="320" loading="lazy"></span>
-                    <span class="planet orbit-sun"></span>
-                </div>
-            </div>
-            <div class="sun-horizon" aria-hidden="true">
-                <div class="sun-disc"><img src="/assets/materials/sun.jpg" alt="" width="1024" height="512" loading="lazy"></div>
-            </div>
-        </section>
-
-        <section class="rule" aria-label="How Cosmic Clash works">
-            <div class="rule-description">
-                <p class="rule-copy">
-                    Two matching planets make a bigger one. Simple enough. Until you’re
-                    convinced you can squeeze in just one more.
-                </p>
-
-                <div class="merge-mark" aria-hidden="true">
-                    <span class="merge-planet merge-planet-small">
-                        <img src="/assets/materials/moon.jpg" alt="" width="318" height="159">
-                    </span>
-                    <span class="merge-sign">+</span>
-                    <span class="merge-planet merge-planet-small">
-                        <img src="/assets/materials/moon.jpg" alt="" width="318" height="159">
-                    </span>
-                    <span class="merge-sign merge-arrow">→</span>
-                    <span class="merge-planet merge-planet-large">
-                        <img src="/assets/materials/mars.jpg" alt="" width="318" height="159">
-                    </span>
-                </div>
-            </div>
-
-
-        </section>
-
-        <section class="play" id="android" aria-labelledby="play-title">
-            <div class="play-copy">
-                <h2 id="play-title">Play on iPhone now. Android is still in testing.</h2>
-                <p>
-                    Android access is invite-only for the moment. Leave the Google Play
-                    email you want added to the tester list.
-                </p>
-                <a class="primary-link" href="https://apps.apple.com/pt/app/the-cosmic-clash/id6484504761">
-                    Download for iPhone <span aria-hidden="true">↗</span>
-                </a>
-            </div>
-
-            <form class="android-form" action="https://formsubmit.co/zandervonn@gmail.com" method="POST">
-                <input type="hidden" name="_subject" value="New Cosmic Clash Android access request">
-                <input type="hidden" name="_template" value="table">
-                <input type="hidden" name="_next" value="https://zandervonn.github.io/android-access-received.html">
-                <input type="hidden" name="Request" value="Cosmic Clash Android tester access">
-                <input class="honeypot" type="text" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true" hidden>
-
-                <label for="android-google-email">Google Play email</label>
-                <div class="form-row">
-                    <input id="android-google-email" type="email" name="email" autocomplete="email" inputmode="email" placeholder="you@example.com" required>
-                    <button type="submit">Request access</button>
-                </div>
-                <p class="form-note">
-                    Used only for tester access.
-                    <a href="https://play.google.com/store/apps/details?id=com.AIvonn.TheCosmicClash">Already invited? Open Google Play ↗</a>
-                </p>
-            </form>
-        </section>
-
-        <section class="support" id="support" aria-labelledby="support-title">
-            <div class="support-copy">
-                <h2 id="support-title">Found a bug or have an idea?</h2>
-                <p>Send a note with what happened and the device you were playing on.</p>
-                <p class="support-direct">
-                    Prefer email?
-                    <a href="mailto:zandervonn@gmail.com">zandervonn@gmail.com</a>
-                </p>
-            </div>
-
-            <form class="support-form" action="https://formsubmit.co/zandervonn@gmail.com" method="POST">
-                <input type="hidden" name="_subject" value="New Cosmic Clash support message">
-                <input type="hidden" name="_template" value="table">
-                <input type="hidden" name="_next" value="https://zandervonn.github.io/support-message-received.html">
-                <input type="hidden" name="Request" value="Cosmic Clash support">
-                <input class="honeypot" type="text" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true" hidden>
-
-                <div class="support-field">
-                    <label for="support-email">Your email</label>
-                    <input id="support-email" type="email" name="email" placeholder="you@example.com" autocomplete="email" inputmode="email" required>
-                </div>
-                <div class="support-field">
-                    <label for="support-device">Device <span>(optional)</span></label>
-                    <input id="support-device" type="text" name="Device" placeholder="iPhone 15, Pixel 9 or Web">
-                </div>
-                <div class="support-field support-message">
-                    <label for="support-message">Message</label>
-                    <textarea id="support-message" name="Message" rows="5" placeholder="What happened, or what would you like to see?" required></textarea>
-                </div>
-                <button type="submit">Send message</button>
-                <p class="support-note">Used only to respond to your support request.</p>
-            </form>
-        </section>
-    </main>
-
-    <footer class="site-footer">
-        <p>Made by Alexander von Neudegg.</p>
-        <nav aria-label="Footer navigation">
-            <a href="#support">Support</a>
-            <a href="/privacy-policy.html">Privacy</a>
-        </nav>
-    </footer>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap"></noscript>
+  <script>
+    (() => {
+      const unityCanvas=document.querySelector('#unity-canvas'),loading=document.querySelector('#unity-loading'),progress=document.querySelector('#unity-progress'),warning=document.querySelector('#unity-warning'),frame=document.querySelector('.unity-frame');
+      let started=false;
+      function showBanner(message,type){const item=document.createElement('div');item.textContent=message;item.style.cssText='padding:10px;margin-bottom:4px;color:#111;background:'+(type==='error'?'#ff6b6b':'#ffd43b');warning.appendChild(item);if(type!=='error')window.setTimeout(()=>item.remove(),5000);}
+      function startGame(){if(started)return;started=true;const buildUrl='Build',loader=document.createElement('script');loader.src=buildUrl+'/Cosmic-Clash-WebGL-v2.1-web3.loader.js';const config={arguments:[],dataUrl:buildUrl+'/Cosmic-Clash-WebGL-v2.1-web3.data.gz',frameworkUrl:buildUrl+'/Cosmic-Clash-WebGL-v2.1-web3.framework.js.gz',
+codeUrl:buildUrl+'/Cosmic-Clash-WebGL-v2.1-web3.wasm.gz',
+streamingAssetsUrl:'StreamingAssets',companyName:"AIvonn",productName:"Cosmic Clash",productVersion:"2.1",showBanner,matchWebGLToCanvasSize:true};
+loader.onload=()=>createUnityInstance(unityCanvas,config,value=>{progress.style.width=(value*100)+'%';}).then(()=>loading.remove()).catch(message=>{loading.remove();showBanner(message,'error');});
+        loader.onerror=()=>{loading.remove();showBanner('The web player could not be loaded. Open it on itch.io instead.','error');};
+        document.body.appendChild(loader);
+      }
+      if('IntersectionObserver' in window){const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){observer.disconnect();startGame();}},{rootMargin:'400px 0px'});observer.observe(frame);}else startGame();
+    })();
+  </script>
 </body>
 </html>
